@@ -51,11 +51,13 @@ def generateTree(to_expand, depth, turn):
         cur_turn = getNextTurn(cur_turn)
         rel_depth += 1
 
+
 def heuristicCalc(turn, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O):
     if turn == "x":
         return (200 * num32X) - (80 * num32O) + (150 * num31X) - (40 * num31O) + (20 * num22X) - (15 * num22O) + (5 * num21X) - (2 * num21O)
     else:
         return (200 * num32O) - (80 * num32X) + (150 * num31O) - (40 * num31X) + (20 * num22O) - (15 * num22X) + (5 * num21O) - (2 * num21X)
+
 
 def heuristic(node, turn):
     found = set()
@@ -101,9 +103,15 @@ def heuristic(node, turn):
                             num21O += 1
     return heuristicCalc(turn, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O)
 
+
 #returns a tuple or set containing found string of same turn type
 def getNeighbors(state, i, j):
-    pass
+    currentChar = state[i][j]
+    if i > 0:
+        if state[i - 1][j] == currentChar:
+            return 0
+
+
 
 if __name__ == "__main__":
     # 2D array state layout
