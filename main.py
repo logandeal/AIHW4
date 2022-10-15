@@ -54,7 +54,9 @@ def generateTree(to_expand, depth_to_generate):
                         # give node heuristic value for the last depth
                         child = Node(child_state, node.getDepth()+1, node, cur_turn)
                         node.setNext(child)
-                        expand_next.add(node)
+                        # if on final level, set heuristics so that minimax can be performed 
+                        if rel_depth == depth_to_generate: child.setHeuristic(heuristic(child, cur_turn))
+                        else: expand_next.add(child)
         if rel_depth == depth_to_generate: break
         to_expand = expand_next
         cur_turn = getNextTurn(cur_turn)
@@ -121,8 +123,6 @@ def getNeighbors(state, i, j):
             return 0
 
 
-
-
 def minimax(to_begin, to_expand):
     # calculate search depth
     search_depth = to_expand[0].getDepth - to_begin[0].getDepth 
@@ -152,9 +152,8 @@ if __name__ == "__main__":
     # construct root node
     root = Node(state, 0, None, "x")
 
-    # create set of beginning nodes for minimax algorithm
-    to_begin = set()
-    to_begin.add(root)
+    # hold node to begin at
+    to_begin = root
     
     # create set of nodes to be expanded and add root
     # NOT A SET, JUST ONE NODE
