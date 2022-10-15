@@ -1,4 +1,4 @@
-import copy, time
+import copy, time, sys
 
 # 2d array state
 # class node
@@ -13,12 +13,12 @@ class Node:
         self.state = state
         self.depth = depth
         self.prev = prev
-        self.next = None
+        self.next = set()
         self.turn = turn
         self.heuristic = None
     
     def setNext(self, next):
-        self.next = next
+        self.next.add(next)
 
     def setHeuristic(self, heuristic):
         self.heuristic = heuristic
@@ -27,14 +27,20 @@ class Node:
 
     def getDepth(self): return self.depth
 
+    def getHeuristic(self): return self.heuristic
+
+    def getNext(self): return self.next
+
 
 def getNextTurn(turn):
     if turn == "x": return "o"
     return "x"
 
 
-def generateTree(to_expand, depth_to_generate):
+def generateTree(node_to_expand, depth_to_generate):
     if depth_to_generate < 1: return
+    to_expand = set()
+    to_expand.add(node_to_expand)
     # get turn of a node to be expanded
     turn = to_expand[0].getTurn()
     # get turn of child node
@@ -123,21 +129,52 @@ def getNeighbors(state, i, j):
             return 0
 
 
-def minimax(to_begin, to_expand):
-    # calculate search depth
-    search_depth = to_expand[0].getDepth - to_begin[0].getDepth 
-    depth_needed = 0
-    turn = to_begin[0].getTurn()
-    # check if expansion is needed
-    if turn == "o": 
-        depth_needed = search_depth - 4
+def terminalTest(node):
+    pass
+
+
+def minimax(node, rel_height, maximizingPlayer):
+    if rel_height == 0 or terminalTest(node) != -1: return node.getHeuristic()
+
+    if maximizingPlayer:
+        maxEval = -sys.maxsize
+        for child in node.getNext():
+            eval = minimax(child, rel_height-1, False)
+            maxEval = max(maxEval, eval)
+        return maxEval
     else: 
-        depth_needed = search_depth - 2
-    if search_depth < 0: generateTree(to_expand, abs(depth_needed))
+        minEval = sys.maxsize
+        for child in node.getNext():
+            eval = minimax(child, rel_height-1, True)
+            minEval = min(minEval, eval)
+        return minEval
+
+
+def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
+    if maximizingPlayer:
+        rel_height = 2
+        maximizingPlayer = True
+    else:
+        rel_height = 4
+        maximizingPlayer = False
+
+    generateTree(to_begin, rel_height - depth_generated)
+    result = minimax(to_begin, rel_height, maximizingPlayer)
     
-    # for node in to_begin run minimax decision for certain depth
-    # after, set to_begin = to_expand
+    for child in to_begin.getNext():
+        if child.getHeuristic() == result:
+            to_begin = child
+            break
+
+    terminal_result = terminalTest(to_begin)
+    if terminal_result != -1: return terminal_result
+    
+    minimaxWrapper(to_begin, rel_height-1, not maximizingPlayer)
+    
+    # run minimax decision for to_begin for certain depth
+    # after, set to_begin = to_expand[0]
     # make recursive call to minimax so that more tree can be generated
+    # if terminated, return -1000 if player o won, 0 for tie, and 1000 if player x won
 
 
 if __name__ == "__main__":
@@ -162,7 +199,7 @@ if __name__ == "__main__":
 
     generateTree(to_expand, 4)
 
-    minimax(to_begin)
+    result = minimaxWrapper(to_begin, to_expand, 0)
 
 
 
