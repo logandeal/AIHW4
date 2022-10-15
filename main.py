@@ -36,7 +36,7 @@ def getNextTurn(turn):
     if turn == "x": return "o"
     return "x"
 
-
+# generates levels of tree needed
 def generateTree(node_to_expand, depth_to_generate):
     if depth_to_generate < 1: return
     to_expand = set()
@@ -129,15 +129,20 @@ def getNeighbors(state, i, j):
             return 0
 
 
+# recursive function for checking 4 in a row
 def terminalTestCell(node, row, col, player, count):
     if node.state[row][col] != player: return False
     if count == 4: return True
     moves = [(1,-1), (1,0), (1,1), (0,1)]
     for move in moves: 
-        terminalTestCell(node, row+move[0], col+move[1], player, count+1)
+        pos_after = (row+move[0], col+move[1])
+        if pos_after[0] < 0 or pos_after[1] < 0: continue
+        terminalTestCell(node, pos_after[0], pos_after[1], player, count+1)
 
+
+# checks relevant cells for start to a 4 in a row
 def terminalTest(node):
-    points_di = {"x": 1000, "o": -1000}
+    points_di = {"x": 1000, "o": -1000} # point dictionary
     for i in range(len(node.state)-3): 
         for j in range(len(node.state[i])-3):
             for player in ["x", "o"]:
@@ -146,6 +151,7 @@ def terminalTest(node):
     return -1
 
 
+# minimax for a specified height, adopted from Sebastian Lague
 def minimax(node, rel_height, maximizingPlayer):
     if rel_height == 0 or terminalTest(node) != -1: return node.getHeuristic()
 
@@ -162,26 +168,27 @@ def minimax(node, rel_height, maximizingPlayer):
             minEval = min(minEval, eval)
         return minEval
 
-
+# minimax wrapper function for running minimax until a player wins
 def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
-    if maximizingPlayer:
-        rel_height = 2
-        maximizingPlayer = True
-    else:
-        rel_height = 4
-        maximizingPlayer = False
+    if maximizingPlayer: rel_height = 2
+    else: rel_height = 4
 
-    generateTree(to_begin, rel_height - depth_generated)
+    levels_needed = rel_height - depth_generated
+    if levels_needed > 0: generateTree(to_begin, levels_needed)
+
     result = minimax(to_begin, rel_height, maximizingPlayer)
     
+    # advance to_begin
     for child in to_begin.getNext():
         if child.getHeuristic() == result:
             to_begin = child
             break
 
+    # check if game is done
     terminal_result = terminalTest(to_begin)
     if terminal_result != -1: return terminal_result
     
+    # if not, recurse to the next player
     minimaxWrapper(to_begin, rel_height-1, not maximizingPlayer)
     
     # run minimax decision for to_begin for certain depth
@@ -206,16 +213,15 @@ if __name__ == "__main__":
     to_begin = root
     
     # create set of nodes to be expanded and add root
-    # NOT A SET, JUST ONE NODE
     to_expand = set()
     to_expand.add(root)
 
-    generateTree(to_expand, 4)
+    result = minimaxWrapper(to_begin, 0, True)
 
-    result = minimaxWrapper(to_begin, to_expand, 0)
-
-
-
+# To do:
+# CPU exec time
+# Keep track of nodes generated (global var)
+# PDF of implementations and result
 
 
 
