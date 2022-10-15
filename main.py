@@ -129,8 +129,21 @@ def getNeighbors(state, i, j):
             return 0
 
 
+def terminalTestCell(node, row, col, player, count):
+    if node.state[row][col] != player: return False
+    if count == 4: return True
+    moves = [(1,-1), (1,0), (1,1), (0,1)]
+    for move in moves: 
+        terminalTestCell(node, row+move[0], col+move[1], player, count+1)
+
 def terminalTest(node):
-    pass
+    points_di = {"x": 1000, "o": -1000}
+    for i in range(len(node.state)-3): 
+        for j in range(len(node.state[i])-3):
+            for player in ["x", "o"]:
+                if node.state[i][j] == player: 
+                    if terminalTestCell(node, i, j, player, 1): return points_di.get(player)
+    return -1
 
 
 def minimax(node, rel_height, maximizingPlayer):
