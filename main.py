@@ -1,6 +1,4 @@
 import copy, time
-from locale import currency
-from os import stat
 
 # 2d array state
 # class node
@@ -15,12 +13,12 @@ class Node:
         self.state = state
         self.depth = depth
         self.prev = prev
-        self.next = None
+        self.next = set()
         self.turn = turn
         self.heuristic = None
     
     def setNext(self, next):
-        self.next = next
+        self.next.add(next)
 
     def setHeuristic(self, heuristic):
         self.heuristic = heuristic
@@ -29,14 +27,20 @@ class Node:
 
     def getDepth(self): return self.depth
 
+    def getHeuristic(self): return self.heuristic
+
+    def getNext(self): return self.next
+
 
 def getNextTurn(turn):
     if turn == "x": return "o"
     return "x"
 
-
-def generateTree(to_expand, depth_to_generate):
+# generates levels of tree needed
+def generateTree(node_to_expand, depth_to_generate):
     if depth_to_generate < 1: return
+    to_expand = set()
+    to_expand.add(node_to_expand)
     # get turn of a node to be expanded
     turn = to_expand[0].getTurn()
     # get turn of child node
@@ -56,7 +60,9 @@ def generateTree(to_expand, depth_to_generate):
                         # give node heuristic value for the last depth
                         child = Node(child_state, node.getDepth()+1, node, cur_turn)
                         node.setNext(child)
-                        expand_next.add(node)
+                        # if on final level, set heuristics so that minimax can be performed 
+                        if rel_depth == depth_to_generate: child.setHeuristic(heuristic(child, cur_turn))
+                        else: expand_next.add(child)
         if rel_depth == depth_to_generate: break
         to_expand = expand_next
         cur_turn = getNextTurn(cur_turn)
@@ -228,21 +234,61 @@ def getNeighbors(state, i, j):
     currentStringList.append(newString)
     return currentStringList
 
-def minimax(to_begin, to_expand):
-    # calculate search depth
-    search_depth = to_expand[0].getDepth - to_begin[0].getDepth 
-    depth_needed = 0
-    turn = to_begin[0].getTurn()
-    # check if expansion is needed
-    if turn == "o": 
-        depth_needed = search_depth - 4
+# checks relevant cells for start to a 4 in a row
+def terminalTest(node):
+    points_di = {"x": 1000, "o": -1000} # point dictionary
+    for i in range(len(node.state)-3): 
+        for j in range(len(node.state[i])-3):
+            for player in ["x", "o"]:
+                if node.state[i][j] == player: 
+                    if terminalTestCell(node, i, j, player, 1): return points_di.get(player)
+    return -1
+
+
+# minimax for a specified height, adopted from Sebastian Lague
+def minimax(node, rel_height, maximizingPlayer):
+    if rel_height == 0 or terminalTest(node) != -1: return node.getHeuristic()
+
+    if maximizingPlayer:
+        maxEval = -sys.maxsize
+        for child in node.getNext():
+            eval = minimax(child, rel_height-1, False)
+            maxEval = max(maxEval, eval)
+        return maxEval
     else: 
-        depth_needed = search_depth - 2
-    if search_depth < 0: generateTree(to_expand, abs(depth_needed))
+        minEval = sys.maxsize
+        for child in node.getNext():
+            eval = minimax(child, rel_height-1, True)
+            minEval = min(minEval, eval)
+        return minEval
+
+# minimax wrapper function for running minimax until a player wins
+def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
+    if maximizingPlayer: rel_height = 2
+    else: rel_height = 4
+
+    levels_needed = rel_height - depth_generated
+    if levels_needed > 0: generateTree(to_begin, levels_needed)
+
+    result = minimax(to_begin, rel_height, maximizingPlayer)
     
-    # for node in to_begin run minimax decision for certain depth
-    # after, set to_begin = to_expand
+    # advance to_begin
+    for child in to_begin.getNext():
+        if child.getHeuristic() == result:
+            to_begin = child
+            break
+
+    # check if game is done
+    terminal_result = terminalTest(to_begin)
+    if terminal_result != -1: return terminal_result
+    
+    # if not, recurse to the next player
+    minimaxWrapper(to_begin, rel_height-1, not maximizingPlayer)
+    
+    # run minimax decision for to_begin for certain depth
+    # after, set to_begin = to_expand[0]
     # make recursive call to minimax so that more tree can be generated
+    # if terminated, return -1000 if player o won, 0 for tie, and 1000 if player x won
 
 
 if __name__ == "__main__":
@@ -257,21 +303,19 @@ if __name__ == "__main__":
     # construct root node
     root = Node(state, 0, None, "x")
 
-    # create set of beginning nodes for minimax algorithm
-    to_begin = set()
-    to_begin.add(root)
+    # hold node to begin at
+    to_begin = root
     
     # create set of nodes to be expanded and add root
-    # NOT A SET, JUST ONE NODE
     to_expand = set()
     to_expand.add(root)
 
-    generateTree(to_expand, 4)
+    result = minimaxWrapper(to_begin, 0, True)
 
-    minimax(to_begin)
-
-
-
+# To do:
+# CPU exec time
+# Keep track of nodes generated (global var)
+# PDF of implementations and result
 
 
 
