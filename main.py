@@ -1,13 +1,5 @@
 import copy, time, sys
 
-# 2d array state
-# class node
-# successors (valid only)
-# minimax-decision (heuristic calculation) -> one looks 4 ahead, one looks 2 ahead
-    # max-value
-    # min-value
-# terminal-test
-
 class Node:
     def __init__(self, state, depth, prev, turn):
         self.state = state
@@ -36,6 +28,7 @@ def getNextTurn(turn):
     if turn == "x": return "o"
     return "x"
 
+
 # generates levels of tree needed
 def generateTree(node_to_expand, depth_to_generate):
     if depth_to_generate < 1: return
@@ -51,8 +44,8 @@ def generateTree(node_to_expand, depth_to_generate):
     while True:
         expand_next = set() # set for updated to_expand
         for node in to_expand:
-            for i in range(5):
-                for j in range(6): # for each cell
+            for i in range(len(node.state)):
+                for j in range(len(node.state[i])): # for each cell
                     if node[i][j] == 0: # valid successor state
                         # create successor (child)
                         child_state = copy.deepcopy(node.state) 
@@ -270,7 +263,7 @@ def terminalTest(node):
 
 # minimax for a specified height, adopted from Sebastian Lague
 def minimax(node, rel_height, maximizingPlayer):
-    if rel_height == 0 or terminalTest(node) != None: return node.getHeuristic()
+    if rel_height == 0 or terminalTest(node) is not None: return node.getHeuristic()
 
     if maximizingPlayer:
         maxEval = -sys.maxsize
@@ -284,6 +277,7 @@ def minimax(node, rel_height, maximizingPlayer):
             eval = minimax(child, rel_height-1, True)
             minEval = min(minEval, eval)
         return minEval
+
 
 # minimax wrapper function for running minimax until a player wins
 def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
@@ -303,7 +297,7 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
 
     # check if game is done
     terminal_result = terminalTest(to_begin)
-    if terminal_result != None: return terminal_result
+    if terminal_result is not None: return terminal_result
     
     # if not, recurse to the next player
     minimaxWrapper(to_begin, rel_height-1, not maximizingPlayer)
