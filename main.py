@@ -27,7 +27,7 @@ class Node:
 
 
 def getNextTurn(turn):
-    if turn == "x": return "o"
+    if turn == "x": return "o" 
     return "x"
 
 
@@ -38,7 +38,7 @@ def generateTree(node_to_expand, depth_to_generate):
     to_expand = set()
     to_expand.add(node_to_expand)
     # get turn of a node to be expanded
-    turn = to_expand[0].getTurn()
+    turn = next(iter(to_expand)).getTurn()
     # get turn of child node
     cur_turn = getNextTurn(turn)
     # start relative depth counter
@@ -49,7 +49,7 @@ def generateTree(node_to_expand, depth_to_generate):
         for node in to_expand:
             for i in range(len(node.state)):
                 for j in range(len(node.state[i])): # for each cell
-                    if node[i][j] == 0: # valid successor state
+                    if node.state[i][j] == 0: # valid successor state
                         # create successor (child)
                         child_state = copy.deepcopy(node.state) 
                         child_state[i][j] = cur_turn 
@@ -83,8 +83,8 @@ def heuristic(node, turn):
     num22O = 0
     num21X = 0
     num21O = 0
-    for i in node.state:
-        for j in node.state[i]:
+    for i in range(len(node.state)):
+        for j in range(len(node.state[i])):
             if (node.state[i][j] == "x") or (node.state[i][j] == "o"):
                 neighborsList = getNeighbors(node.state, i, j)
                 for neighbors in neighborsList:
