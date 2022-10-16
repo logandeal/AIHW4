@@ -147,7 +147,7 @@ def getNeighbors(state, i, j):
     splitString.sort()
     newString = ""
     for part in splitString:
-        newString += part
+        newString += str(part)
     currentStringList.append(newString)
     currentString = "" + currentChar + str(i) + str(j)
     upStop = False
@@ -173,7 +173,7 @@ def getNeighbors(state, i, j):
     splitString.sort()
     newString = ""
     for part in splitString:
-        newString += part
+        newString += str(part)
     currentStringList.append(newString)
     currentString = "" + currentChar + str(i) + str(j)
     upStop = False
@@ -200,7 +200,7 @@ def getNeighbors(state, i, j):
     splitString.sort()
     newString = ""
     for part in splitString:
-        newString += part
+        newString += str(part)
     currentStringList.append(newString)
     currentString = "" + currentChar + str(i) + str(j)
     upStop = False
@@ -227,7 +227,7 @@ def getNeighbors(state, i, j):
     splitString.sort()
     newString = ""
     for part in splitString:
-        newString += part
+        newString += str(part)
     currentStringList.append(newString)
     return currentStringList
 
