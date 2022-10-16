@@ -1,4 +1,4 @@
-import copy, time
+import copy, time, sys
 
 # 2d array state
 # class node
@@ -234,20 +234,43 @@ def getNeighbors(state, i, j):
     currentStringList.append(newString)
     return currentStringList
 
+
+# recursive function for checking 4 in a row
+def terminalTestCell(node, i, j, player, move = None, count = 1):
+    if node.state[i][j] != player: return False
+    if count == 4: return True
+    if moves is not None: moves = move
+    else: 
+        moves = [(1,-1), (1,0), (1,1), (0,1)]
+        if count == 1 and j < 3: moves.pop(0)
+    for move in moves: 
+        pos_after = (i+move[0], j+move[1])
+        return terminalTestCell(node, pos_after[0], pos_after[1], player, move, count+1)
+    
+    # optimization: keep track of ones that I already visited
+    # keep track of rows and columns to still check
+    # once you've checked a row or column, that row or column is dead
+    # keep track of moves based on which directions I've cleared
+    # true or false for all cells
+
+
 # checks relevant cells for start to a 4 in a row
 def terminalTest(node):
+    cells_filled = 0
     points_di = {"x": 1000, "o": -1000} # point dictionary
     for i in range(len(node.state)-3): 
         for j in range(len(node.state[i])-3):
             for player in ["x", "o"]:
                 if node.state[i][j] == player: 
-                    if terminalTestCell(node, i, j, player, 1): return points_di.get(player)
-    return -1
+                    cells_filled += 1
+                    if terminalTestCell(node, i, j, player): return points_di.get(player)
+    if cells_filled == 30: return 0
+    return None
 
 
 # minimax for a specified height, adopted from Sebastian Lague
 def minimax(node, rel_height, maximizingPlayer):
-    if rel_height == 0 or terminalTest(node) != -1: return node.getHeuristic()
+    if rel_height == 0 or terminalTest(node) != None: return node.getHeuristic()
 
     if maximizingPlayer:
         maxEval = -sys.maxsize
@@ -280,7 +303,7 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
 
     # check if game is done
     terminal_result = terminalTest(to_begin)
-    if terminal_result != -1: return terminal_result
+    if terminal_result != None: return terminal_result
     
     # if not, recurse to the next player
     minimaxWrapper(to_begin, rel_height-1, not maximizingPlayer)
