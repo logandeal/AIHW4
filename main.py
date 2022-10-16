@@ -1,5 +1,7 @@
 import copy, time, sys
 
+amt_generated = 1
+
 class Node:
     def __init__(self, state, depth, prev, turn):
         self.state = state
@@ -31,6 +33,7 @@ def getNextTurn(turn):
 
 # generates levels of tree needed
 def generateTree(node_to_expand, depth_to_generate):
+    global amt_generated
     if depth_to_generate < 1: return
     to_expand = set()
     to_expand.add(node_to_expand)
@@ -56,6 +59,7 @@ def generateTree(node_to_expand, depth_to_generate):
                         # if on final level, set heuristics so that minimax can be performed 
                         if rel_depth == depth_to_generate: child.setHeuristic(heuristic(child, cur_turn))
                         else: expand_next.add(child)
+                        amt_generated += 1
         if rel_depth == depth_to_generate: break
         to_expand = expand_next
         cur_turn = getNextTurn(cur_turn)
@@ -309,6 +313,7 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     # 2D array state layout
     state = [
         [0, 0, 0, 0, 0, 0],
@@ -328,11 +333,7 @@ if __name__ == "__main__":
     to_expand.add(root)
 
     result = minimaxWrapper(to_begin, 0, True)
-
-# To do:
-# CPU exec time
-# Keep track of nodes generated (global var)
-# PDF of implementations and result
+    print("--- %s seconds ---" % (time.time() - start_time))
 
 
 
