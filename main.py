@@ -250,12 +250,14 @@ def terminalTestCell(node, i, j, player, prev_move = None, count = 1):
             except: pass
             moves.remove((0,1))
         if i > 1: 
+            try: moves.remove((1,-1))
+            except: pass
             try: moves.remove((1,1))
             except: pass
             moves.remove((1,0))
     for move in moves: 
         pos_after = (i+move[0], j+move[1])
-        if pos_after[0] >= len(node.state) or pos_after[1] >= len(node.state[0]): continue
+        # if pos_after[0] >= len(node.state) or pos_after[1] >= len(node.state[0]): continue
         result = terminalTestCell(node, pos_after[0], pos_after[1], player, move, count+1)
         if result: return result
     return False
