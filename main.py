@@ -276,12 +276,14 @@ def minimax(node, rel_height, maximizingPlayer):
         for child in node.getNext():
             eval = minimax(child, rel_height-1, False)
             maxEval = max(maxEval, eval)
+        node.setHeuristic(maxEval)
         return maxEval
     else: 
         minEval = sys.maxsize
         for child in node.getNext():
             eval = minimax(child, rel_height-1, True)
             minEval = min(minEval, eval)
+        node.setHeuristic(minEval)
         return minEval
 
 
@@ -312,6 +314,8 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
             to_begin = child
             break
 
+    # To_begin is not changing!
+    # STORE THE NODE THAT WAS CHOSEN
     printInfo(start_time, to_begin, amt_generated)
 
     # check if game is done
