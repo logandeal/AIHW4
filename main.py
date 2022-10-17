@@ -238,7 +238,6 @@ def getNeighbors(state, i, j):
 
 
 # recursive function for checking 4 in a row
-# return value: [4 in a row found or not, cell empty]
 def terminalTestCell(node, i, j, player, prev_move = None, count = 1):
     if node.state[i][j] != player: return False
     if count == 4: return True
@@ -281,7 +280,7 @@ def terminalTest(node):
                     result = terminalTestCell(node, i, j, player)
                     if result: return points_di.get(player) # if 4 in a row found
                     # if result[1]: cells_filled = False # if empty cell found
-    if "0" not in str(node.state): return 0
+    if "0" not in str(node.state): return 0 # all cells are filled
     return None
 
 
