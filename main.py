@@ -1,8 +1,6 @@
 import copy, time, sys
 from turtle import down
 
-amt_generated = 1
-
 class Node:
     def __init__(self, state, depth, prev, turn):
         self.state = state
@@ -34,7 +32,7 @@ def getNextTurn(turn):
 
 # generates levels of tree needed
 def generateTree(node_to_expand, depth_to_generate):
-    global amt_generated
+    amt_generated = 0
     if depth_to_generate < 1: return
     to_expand = set()
     to_expand.add(node_to_expand)
@@ -57,14 +55,14 @@ def generateTree(node_to_expand, depth_to_generate):
                         # give node heuristic value for the last depth
                         child = Node(child_state, node.getDepth()+1, node, cur_turn)
                         node.setNext(child)
-                        # if on final level, set heuristics so that minimax can be performed 
-                        if rel_depth == depth_to_generate: child.setHeuristic(heuristic(child, cur_turn))
-                        else: expand_next.add(child)
+                        # if not on final level, add nodes to set to be expanded next
+                        if rel_depth != depth_to_generate: expand_next.add(child)
                         amt_generated += 1
         if rel_depth == depth_to_generate: break
         to_expand = expand_next
         cur_turn = getNextTurn(cur_turn)
         rel_depth += 1
+    return amt_generated
 
 
 def heuristicCalc(turn, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O):
@@ -240,10 +238,12 @@ def getNeighbors(state, i, j):
 
 
 # recursive function for checking 4 in a row
-def terminalTestCell(node, i, j, player, move = None, count = 1):
-    if node.state[i][j] != player: return False
-    if count == 4: return True
-    if moves is not None: moves = move
+# return value: [4 in a row found or not, cell empty]
+def terminalTestCell(node, i, j, player, prev_move = None, count = 1):
+    if node.state[i][j] == 0: return (False, True)
+    if node.state[i][j] != player: return (False, False)
+    if count == 4: return (True, False)
+    if prev_move != None: moves = [prev_move]
     else: 
         moves = [(1,-1), (1,0), (1,1), (0,1)]
         if count == 1 and j < 3: moves.pop(0)
@@ -260,58 +260,88 @@ def terminalTestCell(node, i, j, player, move = None, count = 1):
 
 # checks relevant cells for start to a 4 in a row
 def terminalTest(node):
-    cells_filled = 0
+    cells_filled = True
     points_di = {"x": 1000, "o": -1000} # point dictionary
     for i in range(len(node.state)-3): 
         for j in range(len(node.state[i])-3):
+            if node.state[i][j] == 0:
+                cells_filled = False
+                continue
             for player in ["x", "o"]:
                 if node.state[i][j] == player: 
-                    cells_filled += 1
-                    if terminalTestCell(node, i, j, player): return points_di.get(player)
-    if cells_filled == 30: return 0
+                    result = terminalTestCell(node, i, j, player)
+                    if result[0]: return points_di.get(player) # if 4 in a row found
+                    if result[1]: cells_filled = False # if empty cell found
+    if cells_filled: return 0
     return None
 
 
 # minimax for a specified height, adopted from Sebastian Lague
 def minimax(node, rel_height, maximizingPlayer):
-    if rel_height == 0 or terminalTest(node) is not None: return node.getHeuristic()
+    if rel_height == 0 or terminalTest(node) != None: 
+        if maximizingPlayer: cur_turn = "x"
+        else: cur_turn = "o"
+        node.setHeuristic(heuristic(node, cur_turn))
+        return node.getHeuristic()
 
     if maximizingPlayer:
         maxEval = -sys.maxsize
         for child in node.getNext():
             eval = minimax(child, rel_height-1, False)
             maxEval = max(maxEval, eval)
+        node.setHeuristic(maxEval)
         return maxEval
     else: 
         minEval = sys.maxsize
         for child in node.getNext():
             eval = minimax(child, rel_height-1, True)
             minEval = min(minEval, eval)
+        node.setHeuristic(minEval)
         return minEval
+
+
+def printState(node):
+    for row in node.state: print(row)
+
+
+def printInfo(start_time, node, amt_generated):
+    print("--- %s seconds ---" % (time.time() - start_time))
+    printState(node)
+    print("g:", amt_generated)
+    print("*************")
 
 
 # minimax wrapper function for running minimax until a player wins
 def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
+    start_time = time.time()
+
     if maximizingPlayer: rel_height = 2
     else: rel_height = 4
 
     levels_needed = rel_height - depth_generated
-    if levels_needed > 0: generateTree(to_begin, levels_needed)
+    amt_generated = 0
+    if levels_needed > 0: 
+        amt_generated = generateTree(to_begin, levels_needed)
 
     result = minimax(to_begin, rel_height, maximizingPlayer)
-    
+
     # advance to_begin
     for child in to_begin.getNext():
         if child.getHeuristic() == result:
             to_begin = child
             break
 
+    printInfo(start_time, to_begin, amt_generated)
+
     # check if game is done
     terminal_result = terminalTest(to_begin)
-    if terminal_result is not None: return terminal_result
+    if terminal_result != None: 
+        print("FINAL STATE:")
+        printState(to_begin)
+        return terminal_result
     
     # if not, recurse to the next player
-    minimaxWrapper(to_begin, rel_height-1, not maximizingPlayer)
+    return minimaxWrapper(to_begin, rel_height-1, not maximizingPlayer)
     
     # run minimax decision for to_begin for certain depth
     # after, set to_begin = to_expand[0]
@@ -320,7 +350,6 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
 
 
 if __name__ == "__main__":
-    start_time = time.time()
     # 2D array state layout
     state = [
         [0, 0, 0, 0, 0, 0],
@@ -341,7 +370,7 @@ if __name__ == "__main__":
     to_expand.add(root)
 
     result = minimaxWrapper(to_begin, 0, True)
-    print("--- %s seconds ---" % (time.time() - start_time))
+    print("RESULT =", result)
 
 
 
