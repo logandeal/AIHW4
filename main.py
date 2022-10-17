@@ -293,9 +293,13 @@ def minimax(node, rel_height, maximizingPlayer):
         return minEval
 
 
+def printState(node):
+    for row in node.state: print(row)
+
+
 def printInfo(start_time, node, amt_generated):
     print("--- %s seconds ---" % (time.time() - start_time))
-    for row in node.state: print(row)
+    printState(node)
     print("g:", amt_generated)
     print("*************")
 
@@ -324,7 +328,10 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
 
     # check if game is done
     terminal_result = terminalTest(to_begin)
-    if terminal_result != None: return terminal_result
+    if terminal_result != None: 
+        print("FINAL STATE:")
+        printState(to_begin)
+        return terminal_result
     
     # if not, recurse to the next player
     return minimaxWrapper(to_begin, rel_height-1, not maximizingPlayer)
