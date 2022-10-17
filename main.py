@@ -1,4 +1,5 @@
 import copy, time, sys
+from turtle import down
 
 amt_generated = 1
 
@@ -91,17 +92,21 @@ def heuristic(node, turn):
                     if neighbors not in found:
                         found.add(neighbors)
                         count = len(neighbors)
+                        varCount = 0
+                        for l in neighbors:
+                            if l == "x":
+                                varCount += 1
+                        if varCount == 0:
+                            for l in neighbors:
+                                if l == "o":
+                                    varCount += 1
                         if count == 15:
                             if node.state[i][j] == "x":
                                 num32X += 1
                             else:
                                 num32O += 1
                         elif count == 12:
-                            zeroCount = 0
-                            for i in neighbors:
-                                if i == '0':
-                                    zeroCount += 1
-                            if zeroCount == 2:
+                            if varCount == 2:
                                 if node.state[i][j] == "x":
                                     num22X += 1
                                 else:
@@ -113,117 +118,119 @@ def heuristic(node, turn):
                                     num31O += 1
                         elif count == 9:
                             if node.state[i][j] == "x":
-                                num21X += 1
+                                if(varCount == 2):
+                                    num21X += 1
                             else:
-                                num21O += 1
+                                if(varCount == 2):
+                                    num21O += 1
     return heuristicCalc(turn, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O)
 
 
 #returns a list of all found strings of characters
 def getNeighbors(state, i, j):
     currentChar = state[i][j]
-    currentString = "" + currentChar + str(i) + str(j)
+    currentString = "" + currentChar + str(i) + str(j) + " "
     currentStringList = []
     upStop = False
     downStop = False
     #get up and down string
     for index in range(0, 5):
         if i - index > 0:
-            if state[i - index - 1][j] != currentChar:
+            if (state[i - index - 1][j] != currentChar) and (not upStop):
                 upStop = True
                 if state[i - index - 1][j] == 0:
                     currentString += "0" + str(i - index - 1) + str(j) + " "
             elif (not upStop) and (state[i - index - 1][j] == currentChar):
                 currentString += currentChar + str(i - index - 1) + str(j) + " "
         if i + index < 4:
-            if state[i + index + 1][j] != currentChar:
+            if (state[i + index + 1][j] != currentChar) and (not downStop):
                 downStop = True
                 if state[i + index + 1][j] == 0:
                     currentString += "0" + str(i + index + 1) + str(j) + " "
             elif (not downStop) and (state[i + index + 1][j] == currentChar):
                 currentString += currentChar + str(i + index + 1) + str(j) + " "
     #reordering string to ensure that any line of characters generated will always have the same output
-    splitString = [sub.split() for sub in currentString]
+    splitString = currentString.split()
     splitString.sort()
     newString = ""
     for part in splitString:
         newString += str(part)
     currentStringList.append(newString)
-    currentString = "" + currentChar + str(i) + str(j)
+    currentString = "" + currentChar + str(i) + str(j) + " "
     upStop = False
     downStop = False
     #get left and right string
     for index in range(0, 6):
         if j - index > 0:
-            if state[i][j - index - 1] != currentChar:
+            if (state[i][j - index - 1] != currentChar) and (not upStop):
                 upStop = True
                 if state[i][j - index - 1] == 0:
                     currentString += "0" + str(i) + str(j - index - 1) + " "
             elif (not upStop) and (state[i][j - index - 1] == currentChar):
                 currentString += currentChar + str(i) + str(j - index - 1) + " "
         if j + index < 5:
-            if state[i][j + index + 1] != currentChar:
+            if (state[i][j + index + 1] != currentChar) and (not downStop):
                 downStop = True
                 if state[i][j + index + 1] == 0:
                     currentString += "0" + str(i) + str(j + index + 1) + " "
             elif (not downStop) and (state[i][j + index + 1] == currentChar):
                 currentString += currentChar + str(i) + str(j + index + 1) + " "
     #reordering string to ensure that any line of characters generated will always have the same output
-    splitString = [sub.split() for sub in currentString]
+    splitString = currentString.split()
     splitString.sort()
     newString = ""
     for part in splitString:
         newString += str(part)
     currentStringList.append(newString)
-    currentString = "" + currentChar + str(i) + str(j)
+    currentString = "" + currentChar + str(i) + str(j) + " "
     upStop = False
     downStop = False
     
     #get top left to bottom right diagonal string
     for index in range(0, 4):
         if (j - index > 0) and (i - index > 0):
-            if state[i - index - 1][j - index - 1] != currentChar:
+            if (state[i - index - 1][j - index - 1] != currentChar) and (not upStop):
                 upStop = True
                 if state[i - index - 1][j - index - 1] == 0:
                     currentString += "0" + str(i - index - 1) + str(j - index - 1) + " "
             elif (not upStop) and (state[i - index - 1][j - index - 1] == currentChar):
                 currentString += currentChar + str(i - index - 1) + str(j - index - 1) + " "
         if (j + index < 5) and (i + index < 4):
-            if state[i + index + 1][j + index + 1] != currentChar:
+            if (state[i + index + 1][j + index + 1] != currentChar) and (not downStop):
                 downStop = True
                 if state[i + index + 1][j + index + 1] == 0:
                     currentString += "0" + str(i + index + 1) + str(j + index + 1) + " "
             elif (not downStop) and (state[i + index + 1][j + index + 1] == currentChar):
                 currentString += currentChar + str(i + index + 1) + str(j + index + 1) + " "
     #reordering string to ensure that any line of characters generated will always have the same output
-    splitString = [sub.split() for sub in currentString]
+    splitString = currentString.split()
     splitString.sort()
     newString = ""
     for part in splitString:
         newString += str(part)
     currentStringList.append(newString)
-    currentString = "" + currentChar + str(i) + str(j)
+    currentString = "" + currentChar + str(i) + str(j) + " "
     upStop = False
     downStop = False
 
     #get top right to bottom left diagonal string
     for index in range(0, 4):
         if (j + index < 5) and (i - index > 0):
-            if state[i - index - 1][j + index + 1] != currentChar:
+            if (state[i - index - 1][j + index + 1] != currentChar) and (not upStop):
                 upStop = True
                 if state[i - index - 1][j + index + 1] == 0:
                     currentString += "0" + str(i - index - 1) + str(j + index + 1) + " "
             elif (not upStop) and (state[i - index - 1][j + index + 1] == currentChar):
                 currentString += currentChar + str(i - index - 1) + str(j + index + 1) + " "
         if (j - index > 0) and (i + index < 4):
-            if state[i + index + 1][j - index - 1] != currentChar:
+            if (state[i + index + 1][j - index - 1] != currentChar) and (not downStop):
                 downStop = True
                 if state[i + index + 1][j - index - 1] == 0:
                     currentString += "0" + str(i + index + 1) + str(j - index - 1) + " "
             elif (not downStop) and (state[i + index + 1][j - index - 1] == currentChar):
                 currentString += currentChar + str(i + index + 1) + str(j - index - 1) + " "
     #reordering string to ensure that any line of characters generated will always have the same output
-    splitString = [sub.split() for sub in currentString]
+    splitString = currentString.split()
     splitString.sort()
     newString = ""
     for part in splitString:
@@ -317,14 +324,15 @@ if __name__ == "__main__":
     # 2D array state layout
     state = [
         [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, "x", 0, 0],
-        [0, 0, 0, 0, 0, 0],
+        [0, 0, "x", 0, 0, 0],
+        [0, "x", "x", "o", 0, 0],
+        [0, 0, "x", "o", 0, 0],
         [0, 0, 0, 0, 0, 0]]
 
     # construct root node
     root = Node(state, 0, None, "x")
 
+    #uncomment all this
     # hold node to begin at
     to_begin = root
     
