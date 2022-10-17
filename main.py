@@ -240,16 +240,26 @@ def getNeighbors(state, i, j):
 # recursive function for checking 4 in a row
 # return value: [4 in a row found or not, cell empty]
 def terminalTestCell(node, i, j, player, prev_move = None, count = 1):
-    if node.state[i][j] == 0: return (False, True)
-    if node.state[i][j] != player: return (False, False)
-    if count == 4: return (True, False)
+    if node.state[i][j] != player: return False
+    if count == 4: return True
     if prev_move != None: moves = [prev_move]
     else: 
         moves = [(1,-1), (1,0), (1,1), (0,1)]
-        if count == 1 and j < 3: moves.pop(0)
+        if j < 3: moves.remove((1,-1))
+        else: 
+            try: moves.remove((1,1))
+            except: pass
+            moves.remove((0,1))
+        if i > 1: 
+            try: moves.remove((1,1))
+            except: pass
+            moves.remove((1,0))
     for move in moves: 
         pos_after = (i+move[0], j+move[1])
-        return terminalTestCell(node, pos_after[0], pos_after[1], player, move, count+1)
+        if pos_after[0] >= len(node.state) or pos_after[1] >= len(node.state[0]): continue
+        result = terminalTestCell(node, pos_after[0], pos_after[1], player, move, count+1)
+        if result: return result
+    return False
     
     # optimization: keep track of ones that I already visited
     # keep track of rows and columns to still check
@@ -260,19 +270,18 @@ def terminalTestCell(node, i, j, player, prev_move = None, count = 1):
 
 # checks relevant cells for start to a 4 in a row
 def terminalTest(node):
-    cells_filled = True
     points_di = {"x": 1000, "o": -1000} # point dictionary
-    for i in range(len(node.state)-3): 
-        for j in range(len(node.state[i])-3):
+    for i in range(len(node.state)): 
+        for j in range(len(node.state[i])):
             if node.state[i][j] == 0:
-                cells_filled = False
+                # cells_filled = False
                 continue
             for player in ["x", "o"]:
                 if node.state[i][j] == player: 
                     result = terminalTestCell(node, i, j, player)
-                    if result[0]: return points_di.get(player) # if 4 in a row found
-                    if result[1]: cells_filled = False # if empty cell found
-    if cells_filled: return 0
+                    if result: return points_di.get(player) # if 4 in a row found
+                    # if result[1]: cells_filled = False # if empty cell found
+    if "0" not in str(node.state): return 0
     return None
 
 
@@ -301,7 +310,9 @@ def minimax(node, rel_height, maximizingPlayer):
 
 
 def printState(node):
-    for row in node.state: print(row)
+    for row in node.state: 
+        for col in row: print(col, end=' ')
+        print("\n", end='')
 
 
 def printInfo(start_time, node, amt_generated):
@@ -334,6 +345,7 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
     printInfo(start_time, to_begin, amt_generated)
 
     # check if game is done
+    # print("TURN MADE:")
     terminal_result = terminalTest(to_begin)
     if terminal_result != None: 
         print("FINAL STATE:")
