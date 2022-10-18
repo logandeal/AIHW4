@@ -6,14 +6,14 @@ class Node:
         self.state = state
         self.depth = depth
         self.prev = prev
-        self.next = set()
+        self.next = []
         self.turn = turn
         self.heuristic = None
         self.row = row
         self.col = col
     
     def setNext(self, next):
-        self.next.add(next)
+        self.next.append(next)
 
     def setHeuristic(self, heuristic):
         self.heuristic = heuristic
@@ -34,19 +34,29 @@ def getNextTurn(turn):
 
 # generates levels of tree needed
 def generateTree(node_to_expand, depth_to_generate):
+    # print(node_to_expand)
+    if depth_to_generate < 1: return 0
     amt_generated = 0
-    if depth_to_generate < 1: return
-    to_expand = set()
-    to_expand.add(node_to_expand)
+    to_expand = []
+    to_expand.append(node_to_expand)
     # get turn of a node to be expanded
-    turn = next(iter(to_expand)).getTurn()
+    turn = to_expand[0].getTurn()
     # get turn of child node
     cur_turn = getNextTurn(turn)
     # start relative depth counter
     rel_depth = 1
 
+    to_expand_refined = []
     while True:
-        expand_next = set() # set for updated to_expand
+        for node in to_expand: to_expand_refined.extend(node.getNext())
+        if len(to_expand_refined) == 0: break
+        cur_turn = getNextTurn(cur_turn)
+        to_expand = copy.deepcopy(to_expand_refined)
+        to_expand_refined = []
+
+    # print(to_expand)
+    while True:
+        expand_next = [] # set for updated to_expand
         for node in to_expand:
             for i in range(len(node.state)):
                 for j in range(len(node.state[i])): # for each cell
@@ -57,12 +67,15 @@ def generateTree(node_to_expand, depth_to_generate):
                         child = Node(child_state, node.getDepth()+1, node, cur_turn, i, j)
                         node.setNext(child)
                         # if not on final level, add nodes to set to be expanded next
-                        if rel_depth != depth_to_generate: expand_next.add(child)
+                        if rel_depth != depth_to_generate: expand_next.append(child)
                         amt_generated += 1
+        print("rel_depth: ", rel_depth)
+        print("*")
         if rel_depth == depth_to_generate: break
-        to_expand = expand_next
+        to_expand = copy.deepcopy(expand_next)
         cur_turn = getNextTurn(cur_turn)
         rel_depth += 1
+    # print("to expand depth: ", to_expand[0].getDepth())
     return amt_generated
 
 
@@ -338,9 +351,13 @@ def minimax(node, rel_height, maximizingPlayer):
 
     if maximizingPlayer:
         maxEval = -sys.maxsize
+        # if len(node.getNext()) == 0: print("rel height:", rel_height)
         for child in node.getNext():
             eval = minimax(child, rel_height-1, False)
             maxEval = max(maxEval, eval)
+        if len(node.getNext()) == 0: 
+            node.setHeuristic(heuristic(node, "x"))
+            return node.getHeuristic()
         node.setHeuristic(maxEval)
         return maxEval
     else: 
@@ -348,6 +365,9 @@ def minimax(node, rel_height, maximizingPlayer):
         for child in node.getNext():
             eval = minimax(child, rel_height-1, True)
             minEval = min(minEval, eval)
+        if len(node.getNext()) == 0: 
+            node.setHeuristic(heuristic(node, "o"))
+            return node.getHeuristic()
         node.setHeuristic(minEval)
         return minEval
 
@@ -374,10 +394,12 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
 
     levels_needed = rel_height - depth_generated
     amt_generated = 0
-    if levels_needed > 0: 
-        amt_generated = generateTree(to_begin, levels_needed)
+    # Need to generate nodes at lowest level under to_begin as root, not to_begin
+    # have generate tree handle this
+    if levels_needed > 0: amt_generated = generateTree(to_begin, levels_needed)
 
     result = minimax(to_begin, rel_height, maximizingPlayer)
+    print("result =", result)
     # advance to_begin
     children_to_tiebreak = []
     for child in to_begin.getNext():
@@ -436,9 +458,9 @@ if __name__ == "__main__":
     # hold node to begin at
     to_begin = root
     
-    # create set of nodes to be expanded and add root
-    to_expand = set()
-    to_expand.add(root)
+    # # create set of nodes to be expanded and add root
+    # to_expand = set()
+    # to_expand.add(root)
 
     result = minimaxWrapper(to_begin, 0, False)
     print("RESULT =", result)
