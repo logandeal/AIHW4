@@ -425,12 +425,12 @@ if __name__ == "__main__":
     state = [
         [0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, "x", 0, 0],
+        [0, 0, "o", "x", 0, 0],
         [0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0]]
 
     # construct root node
-    root = Node(state, 0, None, "x", 2, 3)
+    root = Node(state, 0, None, "o", 2, 2)
 
     #uncomment all this
     # hold node to begin at
@@ -440,7 +440,7 @@ if __name__ == "__main__":
     to_expand = set()
     to_expand.add(root)
 
-    result = minimaxWrapper(to_begin, 0, True)
+    result = minimaxWrapper(to_begin, 0, False)
     print("RESULT =", result)
 
 
