@@ -2,13 +2,15 @@ import copy, time, sys
 from turtle import down
 
 class Node:
-    def __init__(self, state, depth, prev, turn):
+    def __init__(self, state, depth, prev, turn, row, col):
         self.state = state
         self.depth = depth
         self.prev = prev
         self.next = set()
         self.turn = turn
         self.heuristic = None
+        self.row = row
+        self.col = col
     
     def setNext(self, next):
         self.next.add(next)
@@ -52,8 +54,7 @@ def generateTree(node_to_expand, depth_to_generate):
                         # create successor (child)
                         child_state = copy.deepcopy(node.state) 
                         child_state[i][j] = cur_turn 
-                        # give node heuristic value for the last depth
-                        child = Node(child_state, node.getDepth()+1, node, cur_turn)
+                        child = Node(child_state, node.getDepth()+1, node, cur_turn, i, j)
                         node.setNext(child)
                         # if not on final level, add nodes to set to be expanded next
                         if rel_depth != depth_to_generate: expand_next.add(child)
@@ -336,13 +337,28 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
         amt_generated = generateTree(to_begin, levels_needed)
 
     result = minimax(to_begin, rel_height, maximizingPlayer)
-
     # advance to_begin
-    # EDIT THIS PART to tiebreak nodes with the same heuristic
+    children_to_tiebreak = []
     for child in to_begin.getNext():
-        if child.getHeuristic() == result:
-            to_begin = child
-            break
+        if child.getHeuristic() == result: children_to_tiebreak.append(child)
+    # see if there are children to tiebreak
+    if len(children_to_tiebreak) == 1: to_begin = children_to_tiebreak[0]
+    elif len(children_to_tiebreak) > 1: # multiple children to tiebreak
+        # get min col child
+        min_col_i = [0]
+        for i in range(1, len(children_to_tiebreak)):
+            if children_to_tiebreak[i].col < children_to_tiebreak[min_col_i[0]].col: min_col_i = [i] 
+            elif children_to_tiebreak[i].col == children_to_tiebreak[min_col_i[0]].col: min_col_i.append(i)
+        if len(min_col_i) == 1: to_begin = children_to_tiebreak[min_col_i[0]]
+        else: # min cols the same so multiple children remaining to tiebreak
+            # get min row child
+            nodes_to_still_tiebreak = []
+            for index in min_col_i: nodes_to_still_tiebreak.append(children_to_tiebreak[index])
+            min_row_i = [0]
+            for i in range(1, len(nodes_to_still_tiebreak)):
+                if nodes_to_still_tiebreak[i].row < nodes_to_still_tiebreak[min_row_i[0]].col: min_row_i = [i] 
+                elif nodes_to_still_tiebreak[i].row == nodes_to_still_tiebreak[min_row_i[0]].col: min_row_i.append(i)
+            to_begin = nodes_to_still_tiebreak[min_row_i[0]]
 
     printInfo(start_time, to_begin, amt_generated)
 
@@ -367,13 +383,13 @@ if __name__ == "__main__":
     # 2D array state layout
     state = [
         [0, 0, 0, 0, 0, 0],
-        [0, 0, "x", 0, 0, 0],
-        [0, "x", "x", "o", 0, 0],
-        [0, 0, "x", "o", 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, "x", 0, 0],
+        [0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0]]
 
     # construct root node
-    root = Node(state, 0, None, "x")
+    root = Node(state, 0, None, "x", 2, 3)
 
     #uncomment all this
     # hold node to begin at
