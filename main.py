@@ -439,7 +439,6 @@ if __name__ == "__main__":
     # create set of nodes to be expanded and add root
     to_expand = set()
     to_expand.add(root)
-
     result = minimaxWrapper(to_begin, 0, False)
     print("RESULT =", result)
 
