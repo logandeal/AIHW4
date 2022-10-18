@@ -338,6 +338,7 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
     result = minimax(to_begin, rel_height, maximizingPlayer)
 
     # advance to_begin
+    # EDIT THIS PART to tiebreak nodes with the same heuristic
     for child in to_begin.getNext():
         if child.getHeuristic() == result:
             to_begin = child
