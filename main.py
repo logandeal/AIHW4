@@ -67,6 +67,7 @@ def generateTree(node_to_expand, depth_to_generate):
 
 
 def heuristicCalc(turn, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O):
+    #heuristic scores are dependent on which player is using them
     if turn == "x":
         return (200 * num32X) - (80 * num32O) + (150 * num31X) - (40 * num31O) + (20 * num22X) - (15 * num22O) + (5 * num21X) - (2 * num21O)
     else:
@@ -74,7 +75,9 @@ def heuristicCalc(turn, num32X, num32O, num31X, num31O, num22X, num22O, num21X, 
 
 
 def heuristic(node, turn):
+    #set containing all found strings of interest on the board
     found = set()
+    #initialize number of strings of interest
     num32X = 0
     num32O = 0
     num31X = 0
@@ -83,14 +86,20 @@ def heuristic(node, turn):
     num22O = 0
     num21X = 0
     num21O = 0
+    #loop through all rows of the board
     for i in range(len(node.state)):
+        #loop through all columns of the board
         for j in range(len(node.state[i])):
+            #if a space has a value in it
             if (node.state[i][j] == "x") or (node.state[i][j] == "o"):
+                #find all strings on he board that could be notable
                 neighborsList = getNeighbors(node.state, i, j)
                 for neighbors in neighborsList:
                     if neighbors not in found:
                         found.add(neighbors)
+                        #get the length of the string, which is garunteed to be of certain sizes depending on what was found
                         count = len(neighbors)
+                        #variable to store the number of 'x's or 'o's
                         varCount = 0
                         for l in neighbors:
                             if l == "x":
@@ -99,53 +108,69 @@ def heuristic(node, turn):
                             for l in neighbors:
                                 if l == "o":
                                     varCount += 1
+                        #if count is of length 15, we must have a string with 5 locations, meaning it's either 0xxx0 or 0ooo0
                         if count == 15:
                             if node.state[i][j] == "x":
                                 num32X += 1
                             else:
                                 num32O += 1
+                        #if count is of length 12, we must have a string with 4 locations, meaning its 0xx0, 0xxx, 0oo0, or 0ooo
                         elif count == 12:
+                            #if number of 'x's or 'o's is 2, it must be either 0xx0 or 0oo0
                             if varCount == 2:
                                 if node.state[i][j] == "x":
                                     num22X += 1
                                 else:
                                     num22O += 1
+                            #else it must be 0xxx or 0ooo
                             else:
                                 if node.state[i][j] == "x":
                                     num31X += 1
                                 else:
                                     num31O += 1
+                        #if count is of length 9, we must have a string with 3 locations, meaning its 0xx, 0x0, 0oo, or 0o0
                         elif count == 9:
                             if node.state[i][j] == "x":
+                                #we do not care about 0x0, so we check to make sure it's 0xx
                                 if(varCount == 2):
                                     num21X += 1
                             else:
+                                #we do not care about 0o0, so we check to make sure it's 0oo
                                 if(varCount == 2):
                                     num21O += 1
+    #calculate the heuristic with the values we just found
     return heuristicCalc(turn, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O)
 
 
-#returns a list of all found strings of characters
+#returns a list of all found strings of characters and their locations
 def getNeighbors(state, i, j):
+    #figure out whether we're looking for 'x's or 'o's
     currentChar = state[i][j]
+    #string to store elements found in the direction of search
     currentString = "" + currentChar + str(i) + str(j) + " "
+    #list of all found strings that will be returned
     currentStringList = []
+    #boolean values to tell us when to stop searching in a direction
     upStop = False
     downStop = False
     #get up and down string
     for index in range(0, 5):
         if i - index > 0:
+            #if the position above is not our current character and we can keep going up, stop going up and if it's 0, attach it
             if (state[i - index - 1][j] != currentChar) and (not upStop):
                 upStop = True
                 if state[i - index - 1][j] == 0:
                     currentString += "0" + str(i - index - 1) + str(j) + " "
+            #if the position was our current character and we can keep going up, attach it and its current position to the currentString
             elif (not upStop) and (state[i - index - 1][j] == currentChar):
                 currentString += currentChar + str(i - index - 1) + str(j) + " "
         if i + index < 4:
+            #if the position above is not our current character and we can keep going down, stop going up and if it's 0, attach it
             if (state[i + index + 1][j] != currentChar) and (not downStop):
                 downStop = True
                 if state[i + index + 1][j] == 0:
                     currentString += "0" + str(i + index + 1) + str(j) + " "
+            #if the position was our current character and we can keep going down, attach it and its current position to the currentString
             elif (not downStop) and (state[i + index + 1][j] == currentChar):
                 currentString += currentChar + str(i + index + 1) + str(j) + " "
     #reordering string to ensure that any line of characters generated will always have the same output
@@ -155,23 +180,28 @@ def getNeighbors(state, i, j):
     for part in splitString:
         newString += str(part)
     currentStringList.append(newString)
+    #reset variables
     currentString = "" + currentChar + str(i) + str(j) + " "
     upStop = False
     downStop = False
     #get left and right string
     for index in range(0, 6):
         if j - index > 0:
+            #if the position above is not our current character and we can keep going left, stop going up and if it's 0, attach it
             if (state[i][j - index - 1] != currentChar) and (not upStop):
                 upStop = True
                 if state[i][j - index - 1] == 0:
                     currentString += "0" + str(i) + str(j - index - 1) + " "
+            #if the position was our current character and we can keep going left, attach it and its current position to the currentString
             elif (not upStop) and (state[i][j - index - 1] == currentChar):
                 currentString += currentChar + str(i) + str(j - index - 1) + " "
         if j + index < 5:
+            #if the position above is not our current character and we can keep going right, stop going up and if it's 0, attach it
             if (state[i][j + index + 1] != currentChar) and (not downStop):
                 downStop = True
                 if state[i][j + index + 1] == 0:
                     currentString += "0" + str(i) + str(j + index + 1) + " "
+            #if the position was our current character and we can keep going right, attach it and its current position to the currentString
             elif (not downStop) and (state[i][j + index + 1] == currentChar):
                 currentString += currentChar + str(i) + str(j + index + 1) + " "
     #reordering string to ensure that any line of characters generated will always have the same output
@@ -181,6 +211,7 @@ def getNeighbors(state, i, j):
     for part in splitString:
         newString += str(part)
     currentStringList.append(newString)
+    #reset variables
     currentString = "" + currentChar + str(i) + str(j) + " "
     upStop = False
     downStop = False
@@ -188,17 +219,21 @@ def getNeighbors(state, i, j):
     #get top left to bottom right diagonal string
     for index in range(0, 4):
         if (j - index > 0) and (i - index > 0):
+            #if the position above is not our current character and we can keep going up and left, stop going up and if it's 0, attach it
             if (state[i - index - 1][j - index - 1] != currentChar) and (not upStop):
                 upStop = True
                 if state[i - index - 1][j - index - 1] == 0:
                     currentString += "0" + str(i - index - 1) + str(j - index - 1) + " "
+            #if the position was our current character and we can keep going up and left, attach it and its current position to the currentString
             elif (not upStop) and (state[i - index - 1][j - index - 1] == currentChar):
                 currentString += currentChar + str(i - index - 1) + str(j - index - 1) + " "
         if (j + index < 5) and (i + index < 4):
+            #if the position above is not our current character and we can keep going down and right, stop going up and if it's 0, attach it
             if (state[i + index + 1][j + index + 1] != currentChar) and (not downStop):
                 downStop = True
                 if state[i + index + 1][j + index + 1] == 0:
                     currentString += "0" + str(i + index + 1) + str(j + index + 1) + " "
+            #if the position was our current character and we can keep going down and right, attach it and its current position to the currentString
             elif (not downStop) and (state[i + index + 1][j + index + 1] == currentChar):
                 currentString += currentChar + str(i + index + 1) + str(j + index + 1) + " "
     #reordering string to ensure that any line of characters generated will always have the same output
@@ -208,6 +243,7 @@ def getNeighbors(state, i, j):
     for part in splitString:
         newString += str(part)
     currentStringList.append(newString)
+    #reset variables
     currentString = "" + currentChar + str(i) + str(j) + " "
     upStop = False
     downStop = False
@@ -215,17 +251,21 @@ def getNeighbors(state, i, j):
     #get top right to bottom left diagonal string
     for index in range(0, 4):
         if (j + index < 5) and (i - index > 0):
+            #if the position above is not our current character and we can keep going up and right, stop going up and if it's 0, attach it
             if (state[i - index - 1][j + index + 1] != currentChar) and (not upStop):
                 upStop = True
                 if state[i - index - 1][j + index + 1] == 0:
                     currentString += "0" + str(i - index - 1) + str(j + index + 1) + " "
+            #if the position was our current character and we can keep going up and right, attach it and its current position to the currentString
             elif (not upStop) and (state[i - index - 1][j + index + 1] == currentChar):
                 currentString += currentChar + str(i - index - 1) + str(j + index + 1) + " "
         if (j - index > 0) and (i + index < 4):
+            #if the position above is not our current character and we can keep going down and left, stop going up and if it's 0, attach it
             if (state[i + index + 1][j - index - 1] != currentChar) and (not downStop):
                 downStop = True
                 if state[i + index + 1][j - index - 1] == 0:
                     currentString += "0" + str(i + index + 1) + str(j - index - 1) + " "
+            #if the position was our current character and we can keep going down and left, attach it and its current position to the currentString
             elif (not downStop) and (state[i + index + 1][j - index - 1] == currentChar):
                 currentString += currentChar + str(i + index + 1) + str(j - index - 1) + " "
     #reordering string to ensure that any line of characters generated will always have the same output
@@ -235,6 +275,7 @@ def getNeighbors(state, i, j):
     for part in splitString:
         newString += str(part)
     currentStringList.append(newString)
+    #return list of found strings
     return currentStringList
 
 
