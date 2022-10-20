@@ -79,18 +79,32 @@ def generateTree(node_to_expand, depth_to_generate):
     return amt_generated
 
 
-def heuristicCalc(turn, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O):
+def heuristicCalc(turn, num4x, num4o, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O):
     #heuristic scores are dependent on which player is using them
-    if turn == "x":
-        return (200 * num32X) - (80 * num32O) + (150 * num31X) - (40 * num31O) + (20 * num22X) - (15 * num22O) + (5 * num21X) - (2 * num21O)
+    if(num4x and num4o):
+        return 0
+    elif turn == "x":
+        if(num4x):
+            return 1000
+        elif(num4o):
+            return -1000
+        else:
+            return (200 * num32X) - (80 * num32O) + (150 * num31X) - (40 * num31O) + (20 * num22X) - (15 * num22O) + (5 * num21X) - (2 * num21O)
     else:
-        return (200 * num32O) - (80 * num32X) + (150 * num31O) - (40 * num31X) + (20 * num22O) - (15 * num22X) + (5 * num21O) - (2 * num21X)
+        if(num4o):
+            return 1000
+        elif(num4x):
+            return -1000
+        else:
+            return (200 * num32O) - (80 * num32X) + (150 * num31O) - (40 * num31X) + (20 * num22O) - (15 * num22X) + (5 * num21O) - (2 * num21X)
 
 
 def heuristic(node, turn):
     #set containing all found strings of interest on the board
     found = set()
     #initialize number of strings of interest
+    num4x = 0
+    num4o = 0
     num32X = 0
     num32O = 0
     num31X = 0
@@ -121,13 +135,27 @@ def heuristic(node, turn):
                             for l in neighbors:
                                 if l == "o":
                                     varCount += 1
+                        #if count is of length 15, we must have a string with 6 locations, meaning it's either 0xxxx0 or 0oooo0
+                        if count == 18:
+                            if node.state[i][j] == "x":
+                                num4x += 1
+                            else:
+                                num4o += 1
                         #if count is of length 15, we must have a string with 5 locations, meaning it's either 0xxx0 or 0ooo0
                         if count == 15:
-                            if node.state[i][j] == "x":
-                                num32X += 1
-                            else:
-                                num32O += 1
-                        #if count is of length 12, we must have a string with 4 locations, meaning its 0xx0, 0xxx, 0oo0, or 0ooo
+                            #if number of 'x's or 'o's is 3, it must be either 0xxx0 or 0ooo0
+                            if varCount == 3:
+                                if node.state[i][j] == "x":
+                                    num32X += 1
+                                else:
+                                    num32O += 1
+                            #if number of 'x's or 'o's is 4, it must be 0oooo or 0xxxx
+                            elif varCount == 4:
+                                if node.state[i][j] == "x":
+                                    num4x += 1
+                                else:
+                                    num4o += 1
+                        #if count is of length 12, we must have a string with 4 locations, meaning its 0xx0, 0xxx, 0oo0, 0ooo, oooo, or xxxx
                         elif count == 12:
                             #if number of 'x's or 'o's is 2, it must be either 0xx0 or 0oo0
                             if varCount == 2:
@@ -135,6 +163,12 @@ def heuristic(node, turn):
                                     num22X += 1
                                 else:
                                     num22O += 1
+                            #if number of 'x's or 'o's is 4, it must be oooo or xxxx
+                            elif varCount == 4:
+                                if node.state[i][j] == "x":
+                                    num4x += 1
+                                else:
+                                    num4o += 1
                             #else it must be 0xxx or 0ooo
                             else:
                                 if node.state[i][j] == "x":
@@ -152,7 +186,7 @@ def heuristic(node, turn):
                                 if(varCount == 2):
                                     num21O += 1
     #calculate the heuristic with the values we just found
-    return heuristicCalc(turn, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O)
+    return heuristicCalc(turn, num4x, num4o, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O)
 
 
 #returns a list of all found strings of characters and their locations
@@ -353,7 +387,7 @@ def minimax(node, rel_height, maximizingPlayer):
         maxEval = -sys.maxsize
         # if len(node.getNext()) == 0: print("rel height:", rel_height)
         for child in node.getNext():
-            eval = minimax(child, rel_height-1, False)
+            eval = minimax(child, rel_height-1, not maximizingPlayer)
             maxEval = max(maxEval, eval)
         if len(node.getNext()) == 0: 
             node.setHeuristic(heuristic(node, "x"))
@@ -363,7 +397,7 @@ def minimax(node, rel_height, maximizingPlayer):
     else: 
         minEval = sys.maxsize
         for child in node.getNext():
-            eval = minimax(child, rel_height-1, True)
+            eval = minimax(child, rel_height-1, not maximizingPlayer)
             minEval = min(minEval, eval)
         if len(node.getNext()) == 0: 
             node.setHeuristic(heuristic(node, "o"))
