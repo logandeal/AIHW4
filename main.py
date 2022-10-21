@@ -1,7 +1,7 @@
 import copy, time, sys
-from turtle import down
+from turtle import down, pos
 
-class Node:
+class TreeNode:
     def __init__(self, state, depth, prev, turn, row, col):
         self.state = state
         self.depth = depth
@@ -12,8 +12,11 @@ class Node:
         self.row = row
         self.col = col
     
-    def setNext(self, next):
-        self.next.append(next)
+    def addNext(self, child):
+        self.next.append(child)
+
+    def removeNexts(self):
+        self.next = []
 
     def setHeuristic(self, heuristic):
         self.heuristic = heuristic
@@ -34,7 +37,6 @@ def getNextTurn(turn):
 
 # generates levels of tree needed
 def generateTree(node_to_expand, depth_to_generate):
-    # print(node_to_expand)
     if depth_to_generate < 1: return 0
     amt_generated = 0
     to_expand = []
@@ -46,36 +48,65 @@ def generateTree(node_to_expand, depth_to_generate):
     # start relative depth counter
     rel_depth = 1
 
-    to_expand_refined = []
+    # get to the nodes that need to be expanded (don't regenerate the same nodes!)
     while True:
-        for node in to_expand: to_expand_refined.extend(node.getNext())
-        if len(to_expand_refined) == 0: break
+        to_expand_revised = []
+        for node in to_expand: to_expand_revised.extend(node.getNext())
+        if len(to_expand_revised) == 0: break
         cur_turn = getNextTurn(cur_turn)
-        to_expand = copy.deepcopy(to_expand_refined)
-        to_expand_refined = []
+        to_expand = []
+        to_expand.extend(to_expand_revised)
 
-    # print(to_expand)
     while True:
-        expand_next = [] # set for updated to_expand
+        expand_next = [] # list for next iteration's to_expand
         for node in to_expand:
-            for i in range(len(node.state)):
-                for j in range(len(node.state[i])): # for each cell
-                    if node.state[i][j] == 0: # valid successor state
+            already_used = [
+            [False, False, False, False, False, False],
+            [False, False, False, False, False, False],
+            [False, False, False, False, False, False],
+            [False, False, False, False, False, False],
+            [False, False, False, False, False, False]]
+            # node.removeNexts()
+            rows = len(node.state)
+            cols = len(node.state[0])
+            for i in range(rows):
+                for j in range(cols): # for each cell
+                    # if node.state[i][j] == 0: # valid successor
+                    if node.state[i][j] == cur_turn: # matching cell
+                        # get open adjacent cells for turn
+                        adjacent_moves = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]
+                        for adjacent_move in adjacent_moves:
+                            pos_after = (i+adjacent_move[0], j+adjacent_move[1])
+                            if pos_after[0] < 0 or pos_after[0] >= rows or pos_after[1] < 0 or pos_after[1] >= cols: continue
+                            if node.state[pos_after[0]][pos_after[1]] != 0 or already_used[pos_after[0]][pos_after[1]]: continue
+                            # create successor (child)
+                            already_used[pos_after[0]][pos_after[1]] = True
+                            child_state = copy.deepcopy(node.state) 
+                            child_state[pos_after[0]][pos_after[1]] = cur_turn 
+                            child = TreeNode(child_state, node.getDepth()+1, node, cur_turn, pos_after[0], pos_after[1])
+                            node.addNext(child)
+                            # if not on final level, add nodes to set to be expanded next
+                            if rel_depth != depth_to_generate: expand_next.append(child)
+                            amt_generated += 1
                         # create successor (child)
-                        child_state = copy.deepcopy(node.state) 
-                        child_state[i][j] = cur_turn 
-                        child = Node(child_state, node.getDepth()+1, node, cur_turn, i, j)
-                        node.setNext(child)
-                        # if not on final level, add nodes to set to be expanded next
-                        if rel_depth != depth_to_generate: expand_next.append(child)
-                        amt_generated += 1
-        print("rel_depth: ", rel_depth)
-        print("*")
+                        # child_state = copy.deepcopy(node.state)
+                        # child_state[i][j] = cur_turn
+                        # child = TreeNode(child_state, node.getDepth()+1, node, cur_turn, i, j)
+                        # node.addNext(child)
+                        # # if not on final level, add nodes to set to be expanded next
+                        # if rel_depth != depth_to_generate: expand_next.append(child)
+                        # amt_generated += 1
         if rel_depth == depth_to_generate: break
-        to_expand = copy.deepcopy(expand_next)
+        to_expand = []
+        for to_expand_node in expand_next: to_expand.append(to_expand_node)
         cur_turn = getNextTurn(cur_turn)
         rel_depth += 1
-    # print("to expand depth: ", to_expand[0].getDepth())
+        
+    # newNode = node_to_expand
+    # while True:
+    #     print("*")
+    #     if len(newNode.getNext()) == 0: break
+    #     newNode = newNode.getNext()[0]
     return amt_generated
 
 
@@ -330,9 +361,10 @@ def getNeighbors(state, i, j):
 def terminalTestCell(node, i, j, player, prev_move = None, count = 1):
     if node.state[i][j] != player: return False
     if count == 4: return True
-    if prev_move != None: moves = [prev_move]
+    if prev_move != None: moves = [prev_move] 
     else: 
-        moves = [(1,-1), (1,0), (1,1), (0,1)]
+        moves = [(1,-1), (1,0), (1,1), (0,1)] # possible moves
+        # remove nodes that cannot lead to 4 in a row
         if j < 3: moves.remove((1,-1))
         else: 
             try: moves.remove((1,1))
@@ -344,18 +376,13 @@ def terminalTestCell(node, i, j, player, prev_move = None, count = 1):
             try: moves.remove((1,1))
             except: pass
             moves.remove((1,0))
+    # for each move check for 4 in a row in that direction
     for move in moves: 
         pos_after = (i+move[0], j+move[1])
         # if pos_after[0] >= len(node.state) or pos_after[1] >= len(node.state[0]): continue
         result = terminalTestCell(node, pos_after[0], pos_after[1], player, move, count+1)
         if result: return result
     return False
-    
-    # optimization: keep track of ones that I already visited
-    # keep track of rows and columns to still check
-    # once you've checked a row or column, that row or column is dead
-    # keep track of moves based on which directions I've cleared
-    # true or false for all cells
 
 
 # checks relevant cells for start to a 4 in a row
@@ -384,24 +411,27 @@ def minimax(node, rel_height, maximizingPlayer):
         return node.getHeuristic()
 
     if maximizingPlayer:
+        # print("max")
+        # print(rel_height)
         maxEval = -sys.maxsize
-        # if len(node.getNext()) == 0: print("rel height:", rel_height)
         for child in node.getNext():
             eval = minimax(child, rel_height-1, not maximizingPlayer)
             maxEval = max(maxEval, eval)
-        if len(node.getNext()) == 0: 
-            node.setHeuristic(heuristic(node, "x"))
-            return node.getHeuristic()
+        # if len(node.getNext()) == 0: 
+        #     node.setHeuristic(heuristic(node, "x"))
+        #     return node.getHeuristic()
         node.setHeuristic(maxEval)
         return maxEval
     else: 
+        # print("min")
+        # print(rel_height)
         minEval = sys.maxsize
         for child in node.getNext():
             eval = minimax(child, rel_height-1, not maximizingPlayer)
             minEval = min(minEval, eval)
-        if len(node.getNext()) == 0: 
-            node.setHeuristic(heuristic(node, "o"))
-            return node.getHeuristic()
+        # if len(node.getNext()) == 0: 
+        #     node.setHeuristic(heuristic(node, "o"))
+        #     return node.getHeuristic()
         node.setHeuristic(minEval)
         return minEval
 
@@ -426,12 +456,10 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
     if maximizingPlayer: rel_height = 2
     else: rel_height = 4
 
-    levels_needed = rel_height - depth_generated
-    amt_generated = 0
-    # Need to generate nodes at lowest level under to_begin as root, not to_begin
-    # have generate tree handle this
-    if levels_needed > 0: amt_generated = generateTree(to_begin, levels_needed)
-
+    # generate levels of tree needed
+    rel_depth_generated = depth_generated - to_begin.getDepth()
+    levels_needed = rel_height - rel_depth_generated
+    amt_generated = generateTree(to_begin, levels_needed)
     result = minimax(to_begin, rel_height, maximizingPlayer)
     print("result =", result)
     # advance to_begin
@@ -460,7 +488,6 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
     printInfo(start_time, to_begin, amt_generated)
 
     # check if game is done
-    # print("TURN MADE:")
     terminal_result = terminalTest(to_begin)
     if terminal_result != None: 
         print("FINAL STATE:")
@@ -468,12 +495,9 @@ def minimaxWrapper(to_begin, depth_generated, maximizingPlayer):
         return terminal_result
     
     # if not, recurse to the next player
-    return minimaxWrapper(to_begin, rel_height-1, not maximizingPlayer)
-    
-    # run minimax decision for to_begin for certain depth
-    # after, set to_begin = to_expand[0]
-    # make recursive call to minimax so that more tree can be generated
-    # if terminated, return -1000 if player o won, 0 for tie, and 1000 if player x won
+    if levels_needed <= 0: depth_generated_this_time = 0
+    else: depth_generated_this_time = levels_needed
+    return minimaxWrapper(to_begin, depth_generated + depth_generated_this_time, not maximizingPlayer)
 
 
 if __name__ == "__main__":
@@ -486,19 +510,20 @@ if __name__ == "__main__":
         [0, 0, 0, 0, 0, 0]]
 
     # construct root node
-    root = Node(state, 0, None, "o", 2, 2)
-
-    #uncomment all this
-    # hold node to begin at
-    to_begin = root
+    root = TreeNode(state, 0, None, "o", 2, 2)
     
-    # # create set of nodes to be expanded and add root
-    # to_expand = set()
-    # to_expand.add(root)
-
-    result = minimaxWrapper(to_begin, 0, False)
+    result = minimaxWrapper(root, 0, True)
     print("RESULT =", result)
 
+# something is not working right with the generation of nodes
+# gen tree taking too long
+# try getting rid of the to_expand_revised thing and just generating 2 or 4 each time
 
+# first problem: gen not actually generating levels - fixed
+# second problem: minimax taking too long
+# try only generating adjacent cells for cur_turn
+# make gen tree faster
 
-
+# problem: gen tree generating more nodes later
+# something is being repeated that shouldn't, states are being repeated 
+# 
