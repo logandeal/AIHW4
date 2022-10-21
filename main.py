@@ -98,7 +98,7 @@ def generateTree(node_to_expand, depth_to_generate):
                         # amt_generated += 1
         if rel_depth == depth_to_generate: break
         to_expand = []
-        for to_expand_node in expand_next: to_expand.append(to_expand_node)
+        to_expand.extend(expand_next)
         cur_turn = getNextTurn(cur_turn)
         rel_depth += 1
         
