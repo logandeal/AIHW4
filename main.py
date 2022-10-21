@@ -112,22 +112,22 @@ def generateTree(node_to_expand, depth_to_generate):
 
 def heuristicCalc(turn, num4x, num4o, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O):
     #heuristic scores are dependent on which player is using them
-    if(num4x and num4o):
+    if((num4x >= 1) and (num4o >= 1)):
         return 0
-    elif turn == "x":
-        if(num4x):
-            return 1000
-        elif(num4o):
-            return -1000
-        else:
-            return (200 * num32X) - (80 * num32O) + (150 * num31X) - (40 * num31O) + (20 * num22X) - (15 * num22O) + (5 * num21X) - (2 * num21O)
+    # elif turn == "x":
+    if(num4x >= 1):
+        return 1000
+    elif(num4o >= 1):
+        return -1000
     else:
-        if(num4o):
-            return 1000
-        elif(num4x):
-            return -1000
-        else:
-            return (200 * num32O) - (80 * num32X) + (150 * num31O) - (40 * num31X) + (20 * num22O) - (15 * num22X) + (5 * num21O) - (2 * num21X)
+        return (200 * num32X) - (80 * num32O) + (150 * num31X) - (40 * num31O) + (20 * num22X) - (15 * num22O) + (5 * num21X) - (2 * num21O)
+    # else:
+    #     if(num4o >= 1):
+    #         return 1000
+    #     elif(num4x >= 1):
+    #         return -1000
+    #     else:
+    #         return (200 * num32O) - (80 * num32X) + (150 * num31O) - (40 * num31X) + (20 * num22O) - (15 * num22X) + (5 * num21O) - (2 * num21X)
 
 
 def heuristic(node, turn):
@@ -511,6 +511,7 @@ if __name__ == "__main__":
 
     # construct root node
     root = TreeNode(state, 0, None, "o", 2, 2)
+    # print(heuristic(root, "o"))
     
     result = minimaxWrapper(root, 0, True)
     print("RESULT =", result)
