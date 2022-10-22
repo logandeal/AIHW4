@@ -110,7 +110,7 @@ def generateTree(node_to_expand, depth_to_generate):
     return amt_generated
 
 
-def heuristicCalc(turn, num4x, num4o, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O):
+def heuristicCalc(num4x, num4o, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O):
     #heuristic scores are dependent on which player is using them
     if((num4x >= 1) and (num4o >= 1)):
         return 0
@@ -130,7 +130,7 @@ def heuristicCalc(turn, num4x, num4o, num32X, num32O, num31X, num31O, num22X, nu
     #         return (200 * num32O) - (80 * num32X) + (150 * num31O) - (40 * num31X) + (20 * num22O) - (15 * num22X) + (5 * num21O) - (2 * num21X)
 
 
-def heuristic(node, turn):
+def heuristic(node):
     #set containing all found strings of interest on the board
     found = set()
     #initialize number of strings of interest
@@ -217,7 +217,7 @@ def heuristic(node, turn):
                                 if(varCount == 2):
                                     num21O += 1
     #calculate the heuristic with the values we just found
-    return heuristicCalc(turn, num4x, num4o, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O)
+    return heuristicCalc(num4x, num4o, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O)
 
 
 #returns a list of all found strings of characters and their locations
@@ -405,9 +405,7 @@ def terminalTest(node):
 # minimax for a specified height, adopted from Sebastian Lague
 def minimax(node, rel_height, maximizingPlayer):
     if rel_height == 0 or terminalTest(node) != None: 
-        if maximizingPlayer: cur_turn = "x"
-        else: cur_turn = "o"
-        node.setHeuristic(heuristic(node, cur_turn))
+        node.setHeuristic(heuristic(node))
         return node.getHeuristic()
 
     if maximizingPlayer:
@@ -418,7 +416,7 @@ def minimax(node, rel_height, maximizingPlayer):
             eval = minimax(child, rel_height-1, not maximizingPlayer)
             maxEval = max(maxEval, eval)
         # if len(node.getNext()) == 0: 
-        #     node.setHeuristic(heuristic(node, "x"))
+        #     node.setHeuristic(heuristic(node))
         #     return node.getHeuristic()
         node.setHeuristic(maxEval)
         return maxEval
@@ -430,7 +428,7 @@ def minimax(node, rel_height, maximizingPlayer):
             eval = minimax(child, rel_height-1, not maximizingPlayer)
             minEval = min(minEval, eval)
         # if len(node.getNext()) == 0: 
-        #     node.setHeuristic(heuristic(node, "o"))
+        #     node.setHeuristic(heuristic(node))
         #     return node.getHeuristic()
         node.setHeuristic(minEval)
         return minEval
@@ -511,7 +509,7 @@ if __name__ == "__main__":
 
     # construct root node
     root = TreeNode(state, 0, None, "o", 2, 2)
-    # print(heuristic(root, "o"))
+    # print(heuristic(root))
     
     result = minimaxWrapper(root, 0, True)
     print("RESULT =", result)
