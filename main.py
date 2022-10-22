@@ -72,7 +72,7 @@ def generateTree(node_to_expand, depth_to_generate):
             for i in range(rows):
                 for j in range(cols): # for each cell
                     # if node.state[i][j] == 0: # valid successor
-                    if node.state[i][j] == cur_turn: # matching cell
+                    if (node.state[i][j] == "x") or (node.state[i][j] == "o"): # matching cell
                         # get open adjacent cells for turn
                         adjacent_moves = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]
                         for adjacent_move in adjacent_moves:
@@ -85,6 +85,10 @@ def generateTree(node_to_expand, depth_to_generate):
                             child_state[pos_after[0]][pos_after[1]] = cur_turn 
                             child = TreeNode(child_state, node.getDepth()+1, node, cur_turn, pos_after[0], pos_after[1])
                             node.addNext(child)
+                            # print("\n")
+                            # printState(child)
+                            # print("\n")
+                            # time.sleep(1)
                             # if not on final level, add nodes to set to be expanded next
                             if rel_depth != depth_to_generate: expand_next.append(child)
                             amt_generated += 1
