@@ -72,7 +72,7 @@ def generateTree(node_to_expand, depth_to_generate):
             for i in range(rows):
                 for j in range(cols): # for each cell
                     # if node.state[i][j] == 0: # valid successor
-                    if node.state[i][j] == cur_turn: # matching cell
+                    if (node.state[i][j] == "x") or (node.state[i][j] == "o"): # matching cell
                         # get open adjacent cells for turn
                         adjacent_moves = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]
                         for adjacent_move in adjacent_moves:
@@ -85,6 +85,10 @@ def generateTree(node_to_expand, depth_to_generate):
                             child_state[pos_after[0]][pos_after[1]] = cur_turn 
                             child = TreeNode(child_state, node.getDepth()+1, node, cur_turn, pos_after[0], pos_after[1])
                             node.addNext(child)
+                            # print("\n")
+                            # printState(child)
+                            # print("\n")
+                            # time.sleep(1)
                             # if not on final level, add nodes to set to be expanded next
                             if rel_depth != depth_to_generate: expand_next.append(child)
                             amt_generated += 1
@@ -110,27 +114,27 @@ def generateTree(node_to_expand, depth_to_generate):
     return amt_generated
 
 
-def heuristicCalc(turn, num4x, num4o, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O):
+def heuristicCalc(num4x, num4o, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O):
     #heuristic scores are dependent on which player is using them
-    if(num4x and num4o):
+    if((num4x >= 1) and (num4o >= 1)):
         return 0
-    elif turn == "x":
-        if(num4x):
-            return 1000
-        elif(num4o):
-            return -1000
-        else:
-            return (200 * num32X) - (80 * num32O) + (150 * num31X) - (40 * num31O) + (20 * num22X) - (15 * num22O) + (5 * num21X) - (2 * num21O)
+    # elif turn == "x":
+    if(num4x >= 1):
+        return 1000
+    elif(num4o >= 1):
+        return -1000
     else:
-        if(num4o):
-            return 1000
-        elif(num4x):
-            return -1000
-        else:
-            return (200 * num32O) - (80 * num32X) + (150 * num31O) - (40 * num31X) + (20 * num22O) - (15 * num22X) + (5 * num21O) - (2 * num21X)
+        return (200 * num32X) - (80 * num32O) + (150 * num31X) - (40 * num31O) + (20 * num22X) - (15 * num22O) + (5 * num21X) - (2 * num21O)
+    # else:
+    #     if(num4o >= 1):
+    #         return 1000
+    #     elif(num4x >= 1):
+    #         return -1000
+    #     else:
+    #         return (200 * num32O) - (80 * num32X) + (150 * num31O) - (40 * num31X) + (20 * num22O) - (15 * num22X) + (5 * num21O) - (2 * num21X)
 
 
-def heuristic(node, turn):
+def heuristic(node):
     #set containing all found strings of interest on the board
     found = set()
     #initialize number of strings of interest
@@ -217,7 +221,7 @@ def heuristic(node, turn):
                                 if(varCount == 2):
                                     num21O += 1
     #calculate the heuristic with the values we just found
-    return heuristicCalc(turn, num4x, num4o, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O)
+    return heuristicCalc(num4x, num4o, num32X, num32O, num31X, num31O, num22X, num22O, num21X, num21O)
 
 
 #returns a list of all found strings of characters and their locations
@@ -405,9 +409,7 @@ def terminalTest(node):
 # minimax for a specified height, adopted from Sebastian Lague
 def minimax(node, rel_height, maximizingPlayer):
     if rel_height == 0 or terminalTest(node) != None: 
-        if maximizingPlayer: cur_turn = "x"
-        else: cur_turn = "o"
-        node.setHeuristic(heuristic(node, cur_turn))
+        node.setHeuristic(heuristic(node))
         return node.getHeuristic()
 
     if maximizingPlayer:
@@ -418,7 +420,7 @@ def minimax(node, rel_height, maximizingPlayer):
             eval = minimax(child, rel_height-1, not maximizingPlayer)
             maxEval = max(maxEval, eval)
         # if len(node.getNext()) == 0: 
-        #     node.setHeuristic(heuristic(node, "x"))
+        #     node.setHeuristic(heuristic(node))
         #     return node.getHeuristic()
         node.setHeuristic(maxEval)
         return maxEval
@@ -430,7 +432,7 @@ def minimax(node, rel_height, maximizingPlayer):
             eval = minimax(child, rel_height-1, not maximizingPlayer)
             minEval = min(minEval, eval)
         # if len(node.getNext()) == 0: 
-        #     node.setHeuristic(heuristic(node, "o"))
+        #     node.setHeuristic(heuristic(node))
         #     return node.getHeuristic()
         node.setHeuristic(minEval)
         return minEval
@@ -511,6 +513,7 @@ if __name__ == "__main__":
 
     # construct root node
     root = TreeNode(state, 0, None, "o", 2, 2)
+    # print(heuristic(root))
     
     result = minimaxWrapper(root, 0, True)
     print("RESULT =", result)
@@ -526,6 +529,4 @@ if __name__ == "__main__":
 
 # problem: gen tree generating more nodes later
 # something is being repeated that shouldn't, states are being repeated 
-# 
-
 # RUN THROUGH the algorithm and see if it's picking the right turn and everything in minimax
