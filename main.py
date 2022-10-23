@@ -527,3 +527,5 @@ if __name__ == "__main__":
 # problem: gen tree generating more nodes later
 # something is being repeated that shouldn't, states are being repeated 
 # 
+
+# RUN THROUGH the algorithm and see if it's picking the right turn and everything in minimax
